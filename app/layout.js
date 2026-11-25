@@ -1,8 +1,12 @@
+import '@fontsource-variable/fraunces';
+import '@fontsource-variable/manrope';
 import './globals.css';
 import Link from 'next/link';
 import { getSettings } from '@/lib/data';
 import { SITE, tel, waLink } from '@/lib/utils';
 import { JsonLd } from '@/components/ui';
+import Header from '@/components/Header';
+import { Icon } from '@/components/icons';
 
 export const revalidate = 60;
 
@@ -21,10 +25,11 @@ export async function generateMetadata() {
   };
 }
 
-export const viewport = { width: 'device-width', initialScale: 1, themeColor: '#0b2545' };
+export const viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#0e3b36' };
 
 export default async function RootLayout({ children }) {
   const s = await getSettings();
+  const wa = waLink(s, 'Halo, saya ingin sewa mobil di Medan');
   const ld = {
     '@context': 'https://schema.org', '@type': 'AutoRental', '@id': SITE + '/#bisnis',
     name: s.name, url: SITE, telephone: [s.phone1, s.phone2].filter(Boolean),
@@ -35,25 +40,19 @@ export default async function RootLayout({ children }) {
     <html lang="id">
       <body>
         <JsonLd data={ld} />
-        <header>
-          <div className="w hd">
-            <Link className="lg" href="/">🚗 Sewa Mobil <span>Medan</span></Link>
-            <input type="checkbox" id="mn" className="sr-cb" aria-label="Buka menu" />
-            <label htmlFor="mn" className="mb" aria-hidden="true">☰</label>
-            <nav aria-label="Menu utama">
-              <Link href="/">Home</Link><Link href="/armada">Armada</Link><Link href="/artikel">Artikel</Link><Link href="/kontak">Kontak</Link>
-            </nav>
-          </div>
-        </header>
+        <Header wa={wa} phone={s.phone1} />
         <main>{children}</main>
-        <footer>
+        <footer className="foot">
           <div className="w ft">
-            <div><b>{s.name}</b><br />{s.address}</div>
-            <div>Telp/WA:<br /><a href={tel(s.phone1)}>{s.phone1}</a>{s.phone2 && <> · <a href={tel(s.phone2)}>{s.phone2}</a></>}</div>
-            <div><Link href="/armada">Armada</Link> · <Link href="/artikel">Artikel</Link> · <Link href="/kontak">Kontak</Link></div>
+            <div className="ft-b"><b>{s.name}</b><p>Rental mobil di Medan: lepas kunci, dengan sopir, dan paket all inclusive.</p></div>
+            <div><h2>Hubungi kami</h2>
+              <p><Icon n="pin" size={16} />{s.address}</p>
+              <p><Icon n="phone" size={16} /><a href={tel(s.phone1)}>{s.phone1}</a>{s.phone2 && <> dan <a href={tel(s.phone2)}>{s.phone2}</a></>}</p></div>
+            <div><h2>Halaman</h2><p><Link href="/armada">Armada</Link></p><p><Link href="/artikel">Artikel</Link></p><p><Link href="/kontak">Kontak</Link></p></div>
           </div>
+          <div className="w ft-c">© {new Date().getFullYear()} {s.name}</div>
         </footer>
-        <a className="fab" href={waLink(s, 'Halo, saya ingin sewa mobil di Medan')} target="_blank" rel="noopener" aria-label="Chat WhatsApp">💬</a>
+        <a className="fab" href={wa} target="_blank" rel="noopener" aria-label="Chat WhatsApp"><Icon n="wa" size={26} /></a>
       </body>
     </html>
   );

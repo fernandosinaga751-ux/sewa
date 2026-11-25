@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getCars, getSettings } from '@/lib/data';
 import { Photo, PriceTable, JsonLd, CarCard } from '@/components/ui';
+import { Icon } from '@/components/icons';
 import { SITE, minPrice, priceList, waLink } from '@/lib/utils';
 
 export const revalidate = 60;
@@ -35,15 +36,15 @@ export default async function Detail({ params }) {
   return (
     <div className="w pg">
       <JsonLd data={ld} /><JsonLd data={bc} />
-      <p className="m"><Link href="/">Home</Link> › <Link href="/armada">Armada</Link> › {c.name}</p>
+      <nav className="crumb" aria-label="Breadcrumb"><Link href="/">Home</Link><span>/</span><Link href="/armada">Armada</Link><span>/</span><span>{c.name}</span></nav>
       <div className="dt">
         <div className="im big-im"><Photo src={c.img} alt={`Sewa ${c.name} di Medan`} priority /></div>
         <div>
           <span className="tag">{c.type}</span>
           <h1>Sewa {c.name} di Medan</h1>
-          <p className="m">👥 {c.seats} kursi · ⚙️ {c.trans}</p>
+          <ul className="spec"><li><Icon n="users" size={16} />{c.seats} kursi</li><li><Icon n="gear" size={16} />{c.trans}</li></ul>
           <p>{c.desc}</p>
-          <a className="btn wa" href={waLink(s, `Halo, saya ingin sewa ${c.name} di Medan`)} target="_blank" rel="noopener">Pesan via WhatsApp</a>
+          <a className="btn wa" href={waLink(s, `Halo, saya ingin sewa ${c.name} di Medan`)} target="_blank" rel="noopener"><Icon n="wa" size={18} />Pesan via WhatsApp</a>
         </div>
       </div>
       <h2>Harga Sewa {c.name}</h2>

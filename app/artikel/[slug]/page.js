@@ -30,11 +30,11 @@ export default async function Post({ params }) {
   return (
     <div className="w pg"><JsonLd data={ld} />
       <article className="art">
-        <p className="m"><Link href="/artikel">← Artikel</Link> · <time dateTime={p.date}>{tgl(p.date)}</time></p>
+        <nav className="crumb" aria-label="Breadcrumb"><Link href="/artikel">Artikel</Link><span>/</span><time dateTime={p.date}>{tgl(p.date)}</time></nav>
         <h1>{p.title}</h1>
         {p.img && <div className="im big-im"><Photo src={p.img} alt={p.title} priority /></div>}
         <Body text={p.body} />
-        <p><Link className="btn" href="/armada">Lihat Armada & Harga</Link></p>
+        <p><Link className="btn" href="/armada">Lihat armada dan harga</Link></p>
       </article>
     </div>
   );
