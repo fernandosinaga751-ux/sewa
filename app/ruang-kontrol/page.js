@@ -4,7 +4,7 @@ import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, getDocs, doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { app, db } from '@/lib/firebase';
-import { PRICE, DEFAULT_SETTINGS, slugify, minPrice, rp } from '@/lib/utils';
+import { PRICE, DEFAULT_SETTINGS, slugify, minPrice, rp, carImgs } from '@/lib/utils';
 
 const iso = () => new Date().toISOString();
 
@@ -16,6 +16,7 @@ export default function Admin() {
   const [s, setS] = useState(null);
   const [f, setF] = useState(null);
   const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]);
   const [msg, setMsg] = useState('');
   const [em, setEm] = useState('');
   const [pw, setPw] = useState('');
@@ -33,7 +34,7 @@ export default function Admin() {
   }
   async function run(fn, ok) {
     setMsg('Menyimpan…');
-    try { await fn(); await load(); setF(null); setFile(null); setMsg(ok); }
+    try { await fn(); await load(); setF(null); setFile(null); setFiles([]); setMsg(ok); }
     catch (e) { setMsg('Gagal: ' + (e.code || e.message)); }
   }
   async function upload() {
@@ -41,6 +42,15 @@ export default function Admin() {
     const r = ref(getStorage(app), `uploads/${Date.now()}-${file.name.replace(/[^\w.]/g, '_')}`);
     await uploadBytes(r, file);
     return getDownloadURL(r);
+  }
+  async function uploadMany() {
+    const out = [...(f.imgs || [])];
+    for (const fl of files) {
+      const r = ref(getStorage(app), `uploads/${Date.now()}-${fl.name.replace(/[^\w.]/g, '_')}`);
+      await uploadBytes(r, fl);
+      out.push(await getDownloadURL(r));
+    }
+    return out;
   }
   const set = (k, v) => setF({ ...f, [k]: v });
   const remove = (col, id) => confirm('Hapus data ini?') && run(() => deleteDoc(doc(db, col, id)), 'Terhapus');
@@ -50,7 +60,9 @@ export default function Admin() {
     const id = f.id || slugify(f.name);
     const prices = {};
     PRICE.forEach(([k]) => { const v = Number(f.prices?.[k]); if (v > 0) prices[k] = v; });
-    await setDoc(doc(db, 'cars', id), { name: f.name.trim(), type: f.type, seats: Number(f.seats) || 0, trans: f.trans, desc: f.desc || '', img: await upload(), prices });
+    if ((f.imgs || []).length + files.length > 6) throw new Error('Maksimal 6 foto per mobil');
+    const imgs = await uploadMany();
+    await setDoc(doc(db, 'cars', id), { name: f.name.trim(), type: f.type, seats: Number(f.seats) || 0, trans: f.trans, desc: f.desc || '', imgs, img: imgs[0] || '', prices });
   }, 'Mobil tersimpan');
 
   const savePost = () => run(async () => {
@@ -79,8 +91,22 @@ export default function Admin() {
   );
 
   const types = s?.types || DEFAULT_SETTINGS.types;
-  const newCar = () => { setFile(null); setF({ name: '', type: types[0], seats: 7, trans: 'Manual/Matic', desc: '', img: '', prices: {} }); };
+  const newCar = () => { setFile(null); setFiles([]); setF({ imgs: [], name: '', type: types[0], seats: 7, trans: 'Manual/Matic', desc: '', img: '', prices: {} }); };
   const newPost = () => { setFile(null); setF({ title: '', desc: '', body: '', img: '' }); };
+  const photosInput = () => (
+    <div>
+      <label>Foto mobil (maksimal 6, tampil sebagai slide otomatis di halaman mobil)</label>
+      <div className="thumbs">{(f.imgs || []).map((u, i) => (
+        <div className="th" key={u}>
+          <img src={u} alt="" />
+          <button type="button" aria-label="Hapus foto" onClick={() => setF({ ...f, imgs: f.imgs.filter((_, j) => j !== i) })}>×</button>
+          {i === 0 && <span>Utama</span>}
+          {i > 0 && <button type="button" className="mk" onClick={() => setF({ ...f, imgs: [f.imgs[i], ...f.imgs.filter((_, j) => j !== i)] })}>Jadikan utama</button>}
+        </div>))}</div>
+      <input type="file" accept="image/*" multiple onChange={(e) => setFiles(Array.from(e.target.files))} />
+      <p className="m">{(f.imgs || []).length} foto tersimpan, {files.length} foto baru dipilih. Total maksimal 6, tiap foto maks 5 MB.</p>
+    </div>
+  );
   const FileInput = () => <div><label>Foto (maks 5 MB)</label><input type="file" accept="image/*" onChange={(e) => setFile(e.target.files[0])} />{f.img && !file && <p className="m">Foto saat ini tersimpan. Pilih file baru untuk mengganti.</p>}</div>;
 
   return (
@@ -102,14 +128,14 @@ export default function Admin() {
           <div><label>Deskripsi</label><textarea rows="3" value={f.desc} onChange={(e) => set('desc', e.target.value)} /></div>
           <h4>Harga per hari (kosongkan jika paket tidak tersedia)</h4>
           <div className="r2">{PRICE.map(([k, l]) => <div key={k}><label>{l} (Rp)</label><input type="number" value={f.prices?.[k] ?? ''} onChange={(e) => setF({ ...f, prices: { ...f.prices, [k]: e.target.value } })} /></div>)}</div>
-          <FileInput />
+          {photosInput()}
           <div className="acts"><button className="btn" onClick={saveCar}>Simpan</button><button className="chip" onClick={() => setF(null)}>Batal</button></div>
         </div>
       ) : (<>
         <button className="btn" onClick={newCar}>+ Tambah Mobil</button>
         <div style={{ marginTop: 16 }}>{cars.map((c) => (
           <div className="row" key={c.id}><div className="i"><b>{c.name}</b><small>{c.type} · {minPrice(c) ? 'mulai ' + rp(minPrice(c)) : 'harga belum diisi'}</small></div>
-            <button className="btn s" onClick={() => { setFile(null); setF({ ...c, prices: { ...c.prices } }); }}>Edit</button>
+            <button className="btn s" onClick={() => { setFile(null); setFiles([]); setF({ ...c, imgs: carImgs(c), prices: { ...c.prices } }); }}>Edit</button>
             <button className="btn s d" onClick={() => remove('cars', c.id)}>Hapus</button></div>))}</div>
       </>))}
 
@@ -139,6 +165,11 @@ export default function Admin() {
             <div><label>No WhatsApp (tombol di halaman)</label><input value={s.wa} onChange={(e) => setS({ ...s, wa: e.target.value })} /></div>
           </div>
           <div><label>Alamat</label><textarea rows="2" value={s.address} onChange={(e) => setS({ ...s, address: e.target.value })} /></div>
+          <div><label>Kata kunci peta (opsional, isi jika peta tidak pas, misalnya nama tempat + alamat)</label><input value={s.mapQuery || ''} onChange={(e) => setS({ ...s, mapQuery: e.target.value })} /></div>
+          <div className="r2">
+            <div><label>Instagram (username atau link)</label><input placeholder="contoh: sewamobilmedan" value={s.instagram || ''} onChange={(e) => setS({ ...s, instagram: e.target.value })} /></div>
+            <div><label>TikTok (username atau link)</label><input placeholder="contoh: sewamobilmedan" value={s.tiktok || ''} onChange={(e) => setS({ ...s, tiktok: e.target.value })} /></div>
+          </div>
           <div><label>Jenis mobil (pisahkan dengan koma)</label><input value={s.typesText} onChange={(e) => setS({ ...s, typesText: e.target.value })} /></div>
           <button className="btn" onClick={saveSet}>Simpan Pengaturan</button>
         </div>

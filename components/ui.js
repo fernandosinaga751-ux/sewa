@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { priceList, minPrice, rp, waLink } from '@/lib/utils';
+import { priceList, minPrice, rp, waLink, carImgs } from '@/lib/utils';
 import { Icon } from './icons';
 
 export function JsonLd({ data }) {
@@ -23,7 +23,7 @@ export function CarCard({ c, s }) {
   const m = minPrice(c);
   return (
     <article className="car">
-      <Link href={`/armada/${c.id}`} className="car-im" tabIndex={-1} aria-hidden="true"><Photo src={c.img} alt="" /><span className="tag">{c.type}</span></Link>
+      <Link href={`/armada/${c.id}`} className="car-im" tabIndex={-1} aria-hidden="true"><Photo src={carImgs(c)[0]} alt="" /><span className="tag">{c.type}</span></Link>
       <div className="car-b">
         <h3><Link href={`/armada/${c.id}`}>{c.name}</Link></h3>
         <ul className="spec"><li><Icon n="users" size={16} />{c.seats} kursi</li><li><Icon n="gear" size={16} />{c.trans}</li></ul>

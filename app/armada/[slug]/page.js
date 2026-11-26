@@ -1,9 +1,10 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getCars, getSettings } from '@/lib/data';
-import { Photo, PriceTable, JsonLd, CarCard } from '@/components/ui';
+import { PriceTable, JsonLd, CarCard } from '@/components/ui';
+import Slider from '@/components/Slider';
 import { Icon } from '@/components/icons';
-import { SITE, minPrice, priceList, waLink } from '@/lib/utils';
+import { SITE, minPrice, priceList, waLink, carImgs } from '@/lib/utils';
 
 export const revalidate = 60;
 
@@ -17,7 +18,7 @@ export async function generateMetadata({ params }) {
     title: `Sewa ${c.name} di Medan${m ? ' Mulai Rp ' + m.toLocaleString('id-ID') : ''}`,
     description: `Sewa ${c.name} di Medan: lepas kunci, dengan supir, all inclusive dalam & luar kota. ${c.desc || ''}`.slice(0, 158),
     alternates: { canonical: `/armada/${c.id}` },
-    openGraph: { images: c.img ? [c.img] : undefined },
+    openGraph: { images: carImgs(c).length ? carImgs(c) : undefined },
   };
 }
 
@@ -27,7 +28,7 @@ export default async function Detail({ params }) {
   if (!c) notFound();
   const pl = priceList(c);
   const ld = {
-    '@context': 'https://schema.org', '@type': 'Product', name: `Sewa ${c.name} di Medan`, description: c.desc, image: c.img || undefined,
+    '@context': 'https://schema.org', '@type': 'Product', name: `Sewa ${c.name} di Medan`, description: c.desc, image: carImgs(c).length ? carImgs(c) : undefined,
     brand: { '@type': 'Brand', name: c.name.split(' ')[0] }, category: c.type,
     offers: pl.length ? { '@type': 'AggregateOffer', priceCurrency: 'IDR', lowPrice: Math.min(...pl.map((x) => x.v)), highPrice: Math.max(...pl.map((x) => x.v)), offerCount: pl.length, availability: 'https://schema.org/InStock', url: `${SITE}/armada/${c.id}` } : undefined,
   };
@@ -38,7 +39,7 @@ export default async function Detail({ params }) {
       <JsonLd data={ld} /><JsonLd data={bc} />
       <nav className="crumb" aria-label="Breadcrumb"><Link href="/">Home</Link><span>/</span><Link href="/armada">Armada</Link><span>/</span><span>{c.name}</span></nav>
       <div className="dt">
-        <div className="im big-im"><Photo src={c.img} alt={`Sewa ${c.name} di Medan`} priority /></div>
+        <Slider imgs={carImgs(c)} alt={`Sewa ${c.name} di Medan`} />
         <div>
           <span className="tag">{c.type}</span>
           <h1>Sewa {c.name} di Medan</h1>

@@ -3,7 +3,7 @@ import '@fontsource-variable/manrope';
 import './globals.css';
 import Link from 'next/link';
 import { getSettings } from '@/lib/data';
-import { SITE, tel, waLink } from '@/lib/utils';
+import { SITE, tel, waLink, socialUrl } from '@/lib/utils';
 import { JsonLd } from '@/components/ui';
 import Header from '@/components/Header';
 import { Icon } from '@/components/icons';
@@ -35,6 +35,7 @@ export default async function RootLayout({ children }) {
     name: s.name, url: SITE, telephone: [s.phone1, s.phone2].filter(Boolean),
     address: { '@type': 'PostalAddress', streetAddress: s.address, addressLocality: 'Medan', addressRegion: 'Sumatera Utara', addressCountry: 'ID' },
     areaServed: { '@type': 'City', name: 'Medan' }, priceRange: 'Rp',
+    sameAs: [socialUrl('ig', s.instagram), socialUrl('tt', s.tiktok)].filter(Boolean),
   };
   return (
     <html lang="id">
@@ -47,7 +48,11 @@ export default async function RootLayout({ children }) {
             <div className="ft-b"><b>{s.name}</b><p>Rental mobil di Medan: lepas kunci, dengan sopir, dan paket all inclusive.</p></div>
             <div><h2>Hubungi kami</h2>
               <p><Icon n="pin" size={16} />{s.address}</p>
-              <p><Icon n="phone" size={16} /><a href={tel(s.phone1)}>{s.phone1}</a>{s.phone2 && <> dan <a href={tel(s.phone2)}>{s.phone2}</a></>}</p></div>
+              <p><Icon n="phone" size={16} /><a href={tel(s.phone1)}>{s.phone1}</a>{s.phone2 && <> dan <a href={tel(s.phone2)}>{s.phone2}</a></>}</p>
+              {(s.instagram || s.tiktok) && <p className="ft-soc">
+                {s.instagram && <a href={socialUrl('ig', s.instagram)} target="_blank" rel="noopener" aria-label="Instagram"><Icon n="ig" size={20} /></a>}
+                {s.tiktok && <a href={socialUrl('tt', s.tiktok)} target="_blank" rel="noopener" aria-label="TikTok"><Icon n="tt" size={20} /></a>}
+              </p>}</div>
             <div><h2>Halaman</h2><p><Link href="/armada">Armada</Link></p><p><Link href="/artikel">Artikel</Link></p><p><Link href="/kontak">Kontak</Link></p></div>
           </div>
           <div className="w ft-c">© {new Date().getFullYear()} {s.name}</div>
